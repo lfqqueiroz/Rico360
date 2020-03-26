@@ -25,6 +25,8 @@ The listing should have the following details:
 6. From user;
 7. To user.
 
+Plus: filters and sorting options.
+
 #### Interface
 
 The main interface should have a side bar with the available users to call.
