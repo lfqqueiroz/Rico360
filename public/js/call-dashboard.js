@@ -81,12 +81,14 @@ async function registerClient(userId) {
                         updateCallStatus('ended');
                         updateUserStatus('online');
                         currentConnection = null;
+                        enableAllUserButtons();
                     });
                 } catch (error) {
                     console.error('Error accepting call:', error);
                     updateCallStatus('error');
                     document.getElementById('incomingCallControls').classList.add('hidden');
                     currentConnection = null;
+                    enableAllUserButtons();
                 }
             };
         }
@@ -106,11 +108,13 @@ async function registerClient(userId) {
                     updateCallStatus('rejected');
                     updateUserStatus('online');
                     currentConnection = null;
+                    enableAllUserButtons();
                 } catch (error) {
                     console.error('Error rejecting call:', error);
                     updateCallStatus('error');
                     document.getElementById('incomingCallControls').classList.add('hidden');
                     currentConnection = null;
+                    enableAllUserButtons();
                 }
             };
         }
@@ -125,12 +129,25 @@ async function registerClient(userId) {
             updateCallStatus('missed');
             updateUserStatus('online');
             currentConnection = null;
+            enableAllUserButtons();
         });
     });
 }
 
-// Initiates an outgoing call to the specified receiver
-function makeCall(receiverId) {
+// Add this function to check user status
+async function checkUserStatus(userId) {
+    try {
+        const response = await fetch(`/check-user-status/${userId}`);
+        const data = await response.json();
+        return data.status;
+    } catch (error) {
+        console.error('Error checking user status:', error);
+        return null;
+    }
+}
+
+// Modify makeCall function to be async
+async function makeCall(receiverId) {
     const button = document.querySelector(`button[data-user-id="${receiverId}"]`);
     
     if (!button) {
@@ -138,8 +155,10 @@ function makeCall(receiverId) {
         return;
     }
 
-    if (button.disabled) {
-        alert('This user is currently in another call.');
+    // Check user status before initiating the call
+    const userStatus = await checkUserStatus(receiverId);
+    if (userStatus === 'in_call') {
+        alert('This user is currently on another call.');
         return;
     }
 
@@ -147,6 +166,9 @@ function makeCall(receiverId) {
         alert('Device not ready. Please wait...');
         return;
     }
+
+    // Disable all user buttons when initiating a call
+    disableAllUserButtons();
 
     const params = { To: receiverId };
     currentConnection = device.connect(params);
@@ -176,6 +198,7 @@ function makeCall(receiverId) {
                     updateCallStatus('ready');
                 }
             }, 3000);
+            enableAllUserButtons();
         });
 
         // Handler for disconnecting
@@ -195,6 +218,7 @@ function makeCall(receiverId) {
                     updateCallStatus('ready');
                 }
             }, 3000);
+            enableAllUserButtons();
         });
 
         currentConnection.on('accept', () => {
@@ -218,6 +242,7 @@ function makeCall(receiverId) {
                     updateCallStatus('ready');
                 }
             }, 3000);
+            enableAllUserButtons();
         });
     }
 }
@@ -322,6 +347,7 @@ function setupCallControls() {
                 document.getElementById('activeCallControls').classList.add('hidden');
                 updateCallStatus('ended');
                 updateUserStatus('online');
+                enableAllUserButtons();
             }
         });
     }
@@ -444,4 +470,24 @@ window.addEventListener('beforeunload', (event) => {
         updateUserStatus('offline');
     }
 });
+
+// Add this new function to disable all call buttons
+function disableAllUserButtons() {
+    const allUserButtons = document.querySelectorAll('button[data-user-id]');
+    allUserButtons.forEach(button => {
+        button.disabled = true;
+        button.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+        button.classList.add('bg-gray-400', 'cursor-not-allowed');
+    });
+}
+
+// Add this new function to enable all call buttons
+function enableAllUserButtons() {
+    const allUserButtons = document.querySelectorAll('button[data-user-id]');
+    allUserButtons.forEach(button => {
+        button.disabled = false;
+        button.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        button.classList.add('bg-blue-500', 'hover:bg-blue-700');
+    });
+}
  

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\UserStatusController;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,14 @@ Route::post('/update-status', [UserStatusController::class, 'update'])
 Route::post('/make-call', [CallController::class, 'makeCall']);
 // Generate Twilio access token for client
 Route::get('/access-token', [CallController::class, 'grantToken'])->name('twilio.token');
+
+// Check user status
+Route::get('/check-user-status/{userId}', function ($userId) {
+    $user = User::find($userId);
+    return response()->json([
+        'status' => $user ? $user->status : 'offline'
+    ]);
+});
 
 // Include authentication routes
 require __DIR__.'/auth.php';
